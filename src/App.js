@@ -1,24 +1,67 @@
-import logo from './logo.svg';
 import './App.css';
+import Home from './Home';
+import {Skills} from './Skills';
+import {Projects} from './Projects';
+import {Experience} from './Experience';
+import {Education} from './Education';
+import {ContactInfo} from './ContactInfo';
+import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <BrowserRouter>
+    <div className="App Container">
+      <h3 className="d-flex justify-content-center m-3">
+        Darius Quick's Web Page
+      </h3>
+
+      <nav className="navbar navbar-expand-sm bg-light navbar-dark">
+        <ul className="navbar-nav">
+          <li className="nav-item- m-1">
+            <NavLink className="btn btn-light btn-outline-primary" to="/">
+            Home
+            </NavLink>
+          </li>
+          <li className="nav-item- m-1">
+            <NavLink className="btn btn-light btn-outline-primary" to="/Skills">
+            Skills
+            </NavLink>
+          </li>
+          <li className="nav-item- m-1">
+            <NavLink className="btn btn-light btn-outline-primary" to="/Projects">
+            Projects
+            </NavLink>
+          </li>
+          <li className="nav-item- m-1">
+            <NavLink className="btn btn-light btn-outline-primary" to="/Experience">
+            Experience
+            </NavLink>
+          </li>
+          <li className="nav-item- m-1">
+            <NavLink className="btn btn-light btn-outline-primary" to="/Education">
+            Education
+            </NavLink>
+          </li>
+          <li className="nav-item- m-1">
+            <NavLink className="btn btn-light btn-outline-primary" to="/ContactInfo">
+            Contact Info
+            </NavLink>
+          </li>
+        </ul>
+      </nav>
+
+      <Routes>
+        <Route path='/' element={<Home />} />
+        <Route path='/home' element={<Home />} />
+        <Route path='/Skills' element={<Skills />} />
+        <Route path='/Projects' element={<Projects />} />
+        <Route path='/Experience' element={<Experience />} />
+        <Route path='/Education' element={<Education />} />
+        <Route path='/ContactInfo' element={<ContactInfo />} />
+      </Routes>
     </div>
+    </BrowserRouter>
   );
 }
 
