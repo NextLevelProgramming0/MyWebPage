@@ -18,19 +18,20 @@ Including another URLconf
 from MyWebPage import views
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 
 from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('skills/', views.skills_list),
-    path('projects/', views.projects_list),
-    path('experience/', views.experience_list),
-    path('education/', views.education_list),
-    path('contactinfo/', views.contactinfo_list),
-    path('/education/SaveFile/', views.SaveFile),
+    # Use case-insensitive regexes to accept requests both with and without trailing slash
+    re_path(r'(?i)^skills/?$', views.skills_list),
+    re_path(r'(?i)^projects/?$', views.projects_list),
+    re_path(r'(?i)^experience/?$', views.experience_list),
+    re_path(r'(?i)^education/?$', views.education_list),
+    re_path(r'(?i)^contactinfo/?$', views.contactinfo_list),
+    re_path(r'(?i)^education/SaveFile/?$', views.SaveFile),
 ]
 
 # Serve media files in development only

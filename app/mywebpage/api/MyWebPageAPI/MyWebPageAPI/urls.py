@@ -30,7 +30,7 @@ urlpatterns = [
     path('experience/', views.experience_list),
     path('education/', views.education_list),
     path('contactinfo/', views.contactinfo_list),
-    path('/education/SaveFile/', views.SaveFile),
+    path('education/SaveFile/', views.SaveFile),
 ]
 
 # Serve media files in development only

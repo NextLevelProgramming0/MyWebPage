@@ -10,8 +10,51 @@ export class ContactInfo extends Component {
       ContactId: 0,
       Email: '',
       PhoneNumber: '',
-      Address: ''
+      Address: '',
+
+      ContactIdFilter: '',
+      EmailFilter: '',
+      PhoneNumberFilter: '',
+      AddressFilter: '',
+      ContactsWithoutFilter: []
     };
+  }
+
+  FilterFn(){
+    var ContactIdFilter=this.state.ContactIdFilter;
+    var EmailFilter=this.state.EmailFilter;
+    var PhoneNumberFilter=this.state.PhoneNumberFilter;
+    var AddressFilter=this.state.AddressFilter;
+
+    var filteredData=this.state.ContactsWithoutFilter.filter(
+      function(el){
+        var id = el.id || el.ContactId || '';
+        var email = el.email || el.Email || '';
+        var phone = el.phoneNumber || el.PhoneNumber || '';
+        var address = el.address || el.Address || '';
+
+        return String(id).toLowerCase().includes(String(ContactIdFilter).toLowerCase()) &&
+          String(email).toLowerCase().includes(String(EmailFilter).toLowerCase()) &&
+          String(phone).toLowerCase().includes(String(PhoneNumberFilter).toLowerCase()) &&
+          String(address).toLowerCase().includes(String(AddressFilter).toLowerCase());
+      }
+    );
+    this.setState({contacts:filteredData});
+  }
+
+  sortResult(prop, asc){
+    var sortedData = this.state.ContactsWithoutFilter.sort(function(a,b){
+      var aProp = a[prop] || a[prop.charAt(0).toUpperCase() + prop.slice(1)] || '';
+      var bProp = b[prop] || b[prop.charAt(0).toUpperCase() + prop.slice(1)] || '';
+
+      if(asc){
+        return aProp > bProp ? 1 : (aProp < bProp ? -1 : 0);
+      }else{
+        return bProp > aProp ? 1 : (bProp < aProp ? -1 : 0);
+      }
+    });
+
+    this.setState({ContactsWithoutFilter:sortedData, contacts:sortedData});
   }
 
   componentDidMount() {
@@ -21,12 +64,17 @@ export class ContactInfo extends Component {
   refreshList() {
     fetch(variables.API_URL + 'contactinfo')
       .then(res => res.json())
-      .then(data => this.setState({ contacts: data }));
+      .then(data => this.setState({ contacts: data, ContactsWithoutFilter: data }));
   }
 
   changeEmail = (e) => { this.setState({ Email: e.target.value }); };
   changePhoneNumber = (e) => { this.setState({ PhoneNumber: e.target.value }); };
   changeAddress = (e) => { this.setState({ Address: e.target.value }); };
+
+  changeContactIdFilter = (e) => { this.setState({ ContactIdFilter: e.target.value }, () => this.FilterFn()); };
+  changeEmailFilter = (e) => { this.setState({ EmailFilter: e.target.value }, () => this.FilterFn()); };
+  changePhoneNumberFilter = (e) => { this.setState({ PhoneNumberFilter: e.target.value }, () => this.FilterFn()); };
+  changeAddressFilter = (e) => { this.setState({ AddressFilter: e.target.value }, () => this.FilterFn()); };
 
   addClick() {
     this.setState({ modalTitle: 'Add Contact', ContactId: 0, Email: '', PhoneNumber: '', Address: '' }, () => {
@@ -36,14 +84,20 @@ export class ContactInfo extends Component {
   }
 
   editClick(c) {
-    this.setState({ modalTitle: 'Edit Contact', ContactId: c.ContactId, Email: c.Email, PhoneNumber: c.PhoneNumber, Address: c.Address }, () => {
+    this.setState({
+      modalTitle: 'Edit Contact',
+      ContactId: c.id || c.ContactId,
+      Email: c.email || c.Email,
+      PhoneNumber: c.phoneNumber || c.PhoneNumber,
+      Address: c.address || c.Address
+    }, () => {
       const modalEl = document.getElementById('contactModal');
       if (window.bootstrap) { new window.bootstrap.Modal(modalEl).show(); }
     });
   }
 
   createClick() {
-    fetch(variables.API_URL + 'contactinfo', { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ Email: this.state.Email, PhoneNumber: this.state.PhoneNumber, Address: this.state.Address }) })
+    fetch(variables.API_URL + 'contactinfo', { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ email: this.state.Email, phoneNumber: this.state.PhoneNumber, address: this.state.Address }) })
       .then(res => res.json())
       .then((result) => {
         this.refreshList();
@@ -53,7 +107,7 @@ export class ContactInfo extends Component {
   }
 
   updateClick() {
-    fetch(variables.API_URL + 'contactinfo', { method: 'PUT', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ ContactId: this.state.ContactId, Email: this.state.Email, PhoneNumber: this.state.PhoneNumber, Address: this.state.Address }) })
+    fetch(variables.API_URL + 'contactinfo', { method: 'PUT', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ id: this.state.ContactId, email: this.state.Email, phoneNumber: this.state.PhoneNumber, address: this.state.Address }) })
       .then(res => res.json())
       .then((result) => {
         this.refreshList();
@@ -64,7 +118,7 @@ export class ContactInfo extends Component {
 
   deleteClick(id) {
     if (window.confirm('Are you sure?')) {
-      fetch(variables.API_URL + 'contactinfo/' + id, { method: 'DELETE', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } })
+      fetch(variables.API_URL + 'contactinfo?id=' + id, { method: 'DELETE', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } })
         .then(res => res.json())
         .then((result) => { this.refreshList(); }, (error) => { console.error(error); alert('Delete failed'); });
     }
@@ -81,19 +135,45 @@ export class ContactInfo extends Component {
         <table className="table table-striped">
           <thead>
             <tr>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Address</th>
-              <th>Options</th>
+              <th>
+                <div className = "d-flex flex-row">
+                  <input className="form-control m-2" onChange={(e) => { this.setState({ ContactIdFilter: e.target.value }, () => this.FilterFn()); }} placeholder="Filter by ID" />
+                  <button type = "button" className = "btn btn-light" onClick={()=>this.sortResult('id',true)}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-down-square-fill" viewBox="0 0 16 16">
+                      <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.5 4.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5a.5.5 0 0 1 1 0"/>
+                    </svg>
+                  </button>
+
+                  <button type = "button" className = "btn btn-light" onClick={()=>this.sortResult('id',false)}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-up-square-fill" viewBox="0 0 16 16">
+                      <path d="M2 16a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2zm6.5-4.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 1 0"/>
+                    </svg>
+                  </button>
+
+                </div>
+                Email
+              </th>
+              <th>
+                <input className="form-control m-2" onChange={(e) => { this.setState({ EmailFilter: e.target.value }, () => this.FilterFn()); }} placeholder="Filter by Email" />
+                Phone
+              </th>
+              <th>
+                <input className="form-control m-2" onChange={(e) => { this.setState({ PhoneNumberFilter: e.target.value }, () => this.FilterFn()); }} placeholder="Filter by Phone" />
+                Address
+              </th>
+              <th>
+                <input className="form-control m-2" onChange={(e) => { this.setState({ AddressFilter: e.target.value }, () => this.FilterFn()); }} placeholder="Filter by Address" />
+                Options
+              </th>
             </tr>
           </thead>
 
           <tbody>
             {contacts.map(c => (
-              <tr key={c.ContactId}>
-                <td>{c.Email}</td>
-                <td>{c.PhoneNumber}</td>
-                <td>{c.Address}</td>
+              <tr key={c.id || c.ContactId}>
+                <td>{c.email || c.Email}</td>
+                <td>{c.phoneNumber || c.PhoneNumber}</td>
+                <td>{c.address || c.Address}</td>
                 <td>
                   <button type="button" className="btn btn-light mr-1" onClick={() => this.editClick(c)} aria-label="Edit Contact">
                     Edit Contact
@@ -103,7 +183,7 @@ export class ContactInfo extends Component {
                     </svg>
                   </button>
 
-                  <button type="button" className="btn btn-light mr-1" onClick={() => this.deleteClick(c.ContactId)} aria-label="Delete Contact">
+                  <button type="button" className="btn btn-light mr-1" onClick={() => this.deleteClick(c.id || c.ContactId)} aria-label="Delete Contact">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
                       <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/>
                     </svg>

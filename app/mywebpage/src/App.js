@@ -19,32 +19,32 @@ function App() {
       <nav className="navbar navbar-expand-sm bg-light navbar-dark">
         <ul className="navbar-nav">
           <li className="nav-item- m-1">
-            <NavLink className="btn btn-light btn-outline-primary" to="/">
+            <NavLink className="btn btn-light btn-outline-primary nav-btn" to="/">
             Home
             </NavLink>
           </li>
           <li className="nav-item- m-1">
-            <NavLink className="btn btn-light btn-outline-primary" to="/Skills">
+            <NavLink className="btn btn-light btn-outline-primary nav-btn" to="/Skills">
             Skills
             </NavLink>
           </li>
           <li className="nav-item- m-1">
-            <NavLink className="btn btn-light btn-outline-primary" to="/Projects">
+            <NavLink className="btn btn-light btn-outline-primary nav-btn" to="/Projects">
             Projects
             </NavLink>
           </li>
           <li className="nav-item- m-1">
-            <NavLink className="btn btn-light btn-outline-primary" to="/Experience">
+            <NavLink className="btn btn-light btn-outline-primary nav-btn" to="/Experience">
             Experience
             </NavLink>
           </li>
           <li className="nav-item- m-1">
-            <NavLink className="btn btn-light btn-outline-primary" to="/Education">
+            <NavLink className="btn btn-light btn-outline-primary nav-btn" to="/Education">
             Education
             </NavLink>
           </li>
           <li className="nav-item- m-1">
-            <NavLink className="btn btn-light btn-outline-primary" to="/ContactInfo">
+            <NavLink className="btn btn-light btn-outline-primary nav-btn" to="/ContactInfo">
             Contact Info
             </NavLink>
           </li>

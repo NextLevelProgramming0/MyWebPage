@@ -11,8 +11,55 @@ export class Experience extends Component {
       JobTitle: '',
       CompanyName: '',
       Duration: '',
-      Description: ''
+      Description: '',
+
+      ExperienceIdFilter: '',
+      JobTitleFilter: '',
+      CompanyNameFilter: '',
+      DurationFilter: '',
+      DescriptionFilter: '',
+      ExperiencesWithoutFilter: []
     };
+  }
+
+  FilterFn(){
+    var ExperienceIdFilter = this.state.ExperienceIdFilter;
+    var JobTitleFilter = this.state.JobTitleFilter;
+    var CompanyNameFilter = this.state.CompanyNameFilter;
+    var DurationFilter = this.state.DurationFilter;
+    var DescriptionFilter = this.state.DescriptionFilter;
+
+    var filteredData = this.state.ExperiencesWithoutFilter.filter(
+      function(el){
+        var id = el.id || el.ExperienceId || '';
+        var job = el.jobTitle || el.JobTitle || '';
+        var company = el.companyName || el.CompanyName || '';
+        var duration = el.duration || el.Duration || '';
+        var desc = el.description || el.Description || '';
+
+        return String(id).toLowerCase().includes(String(ExperienceIdFilter).toLowerCase()) &&
+          String(job).toLowerCase().includes(String(JobTitleFilter).toLowerCase()) &&
+          String(company).toLowerCase().includes(String(CompanyNameFilter).toLowerCase()) &&
+          String(duration).toLowerCase().includes(String(DurationFilter).toLowerCase()) &&
+          String(desc).toLowerCase().includes(String(DescriptionFilter).toLowerCase());
+      }
+    );
+    this.setState({experiences: filteredData});
+  }
+
+  sortResult(prop, asc){
+    var sortedData = this.state.ExperiencesWithoutFilter.sort(function(a,b){
+      var aProp = a[prop] || a[prop.charAt(0).toUpperCase() + prop.slice(1)] || '';
+      var bProp = b[prop] || b[prop.charAt(0).toUpperCase() + prop.slice(1)] || '';
+
+      if(asc){
+        return aProp > bProp ? 1 : (aProp < bProp ? -1 : 0);
+      }else{
+        return bProp > aProp ? 1 : (bProp < aProp ? -1 : 0);
+      }
+    });
+
+    this.setState({ExperiencesWithoutFilter:sortedData, experiences:sortedData});
   }
 
   componentDidMount() {
@@ -22,13 +69,19 @@ export class Experience extends Component {
   refreshList() {
     fetch(variables.API_URL + 'experience')
       .then(res => res.json())
-      .then(data => this.setState({ experiences: data }));
+      .then(data => this.setState({ experiences: data, ExperiencesWithoutFilter: data }));
   }
 
   changeJobTitle = (e) => { this.setState({ JobTitle: e.target.value }); };
   changeCompanyName = (e) => { this.setState({ CompanyName: e.target.value }); };
   changeDuration = (e) => { this.setState({ Duration: e.target.value }); };
   changeDescription = (e) => { this.setState({ Description: e.target.value }); };
+
+  changeExperienceIdFilter = (e) => { this.setState({ ExperienceIdFilter: e.target.value }, () => this.FilterFn()); };
+  changeJobTitleFilter = (e) => { this.setState({ JobTitleFilter: e.target.value }, () => this.FilterFn()); };
+  changeCompanyNameFilter = (e) => { this.setState({ CompanyNameFilter: e.target.value }, () => this.FilterFn()); };
+  changeDurationFilter = (e) => { this.setState({ DurationFilter: e.target.value }, () => this.FilterFn()); };
+  changeDescriptionFilter = (e) => { this.setState({ DescriptionFilter: e.target.value }, () => this.FilterFn()); };
 
   addClick() {
     this.setState({ modalTitle: 'Add Experience', ExperienceId: 0, JobTitle: '', CompanyName: '', Duration: '', Description: '' }, () => {
@@ -40,11 +93,11 @@ export class Experience extends Component {
   editClick(exp) {
     this.setState({
       modalTitle: 'Edit Experience',
-      ExperienceId: exp.ExperienceId,
-      JobTitle: exp.JobTitle,
-      CompanyName: exp.CompanyName,
-      Duration: exp.Duration,
-      Description: exp.Description
+      ExperienceId: exp.id || exp.ExperienceId,
+      JobTitle: exp.jobTitle || exp.JobTitle,
+      CompanyName: exp.companyName || exp.CompanyName,
+      Duration: exp.duration || exp.Duration,
+      Description: exp.description || exp.Description
     }, () => {
       const modalEl = document.getElementById('experienceModal');
       if (window.bootstrap) { new window.bootstrap.Modal(modalEl).show(); }
@@ -55,7 +108,7 @@ export class Experience extends Component {
     fetch(variables.API_URL + 'experience', {
       method: 'POST',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ JobTitle: this.state.JobTitle, CompanyName: this.state.CompanyName, Duration: this.state.Duration, Description: this.state.Description })
+      body: JSON.stringify({ jobTitle: this.state.JobTitle, companyName: this.state.CompanyName, duration: this.state.Duration, description: this.state.Description })
     })
       .then(res => res.json())
       .then((result) => {
@@ -72,7 +125,7 @@ export class Experience extends Component {
     fetch(variables.API_URL + 'experience', {
       method: 'PUT',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ExperienceId: this.state.ExperienceId, JobTitle: this.state.JobTitle, CompanyName: this.state.CompanyName, Duration: this.state.Duration, Description: this.state.Description })
+      body: JSON.stringify({ id: this.state.ExperienceId, jobTitle: this.state.JobTitle, companyName: this.state.CompanyName, duration: this.state.Duration, description: this.state.Description })
     })
       .then(res => res.json())
       .then((result) => {
@@ -87,7 +140,7 @@ export class Experience extends Component {
 
   deleteClick(id) {
     if (window.confirm('Are you sure?')) {
-      fetch(variables.API_URL + 'experience/' + id, { method: 'DELETE', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } })
+      fetch(variables.API_URL + 'experience?id=' + id, { method: 'DELETE', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } })
         .then(res => res.json())
         .then((result) => { this.refreshList(); }, (error) => { console.error(error); alert('Delete failed'); });
     }
@@ -104,19 +157,45 @@ export class Experience extends Component {
         <table className="table table-striped">
           <thead>
             <tr>
-              <th>Job Title</th>
-              <th>Company</th>
-              <th>Duration</th>
-              <th>Options</th>
+              <th>
+                <div className = "d-flex flex-row">
+                  <input className="form-control m-2" onChange={(e) => { this.setState({ ExperienceIdFilter: e.target.value }, () => this.FilterFn()); }} placeholder="Filter by ID" />
+                  <button type = "button" className = "btn btn-light" onClick={()=>this.sortResult('id',true)}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-down-square-fill" viewBox="0 0 16 16">
+                      <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.5 4.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5a.5.5 0 0 1 1 0"/>
+                    </svg>
+                  </button>
+
+                  <button type = "button" className = "btn btn-light" onClick={()=>this.sortResult('id',false)}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-up-square-fill" viewBox="0 0 16 16">
+                      <path d="M2 16a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2zm6.5-4.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 1 0"/>
+                    </svg>
+                  </button>
+
+                </div>
+                Job Title
+              </th>
+              <th>
+                <input className="form-control m-2" onChange={(e) => { this.setState({ JobTitleFilter: e.target.value }, () => this.FilterFn()); }} placeholder="Filter by Job Title" />
+                Company
+              </th>
+              <th>
+                <input className="form-control m-2" onChange={(e) => { this.setState({ CompanyNameFilter: e.target.value }, () => this.FilterFn()); }} placeholder="Filter by Company" />
+                Duration
+              </th>
+              <th>
+                <input className="form-control m-2" onChange={(e) => { this.setState({ DurationFilter: e.target.value }, () => this.FilterFn()); }} placeholder="Filter by Duration" />
+                Options
+              </th>
             </tr>
           </thead>
 
           <tbody>
             {experiences.map(exp => (
-              <tr key={exp.ExperienceId}>
-                <td>{exp.JobTitle}</td>
-                <td>{exp.CompanyName}</td>
-                <td>{exp.Duration}</td>
+              <tr key={exp.id || exp.ExperienceId}>
+                <td>{exp.jobTitle || exp.JobTitle}</td>
+                <td>{exp.companyName || exp.CompanyName}</td>
+                <td>{exp.duration || exp.Duration}</td>
                 <td>
                   <button type="button" className="btn btn-light mr-1" onClick={() => this.editClick(exp)} aria-label="Edit Experience">
                     Edit Experience
@@ -126,7 +205,7 @@ export class Experience extends Component {
                     </svg>
                   </button>
 
-                  <button type="button" className="btn btn-light mr-1" onClick={() => this.deleteClick(exp.ExperienceId)} aria-label="Delete Experience">
+                  <button type="button" className="btn btn-light mr-1" onClick={() => this.deleteClick(exp.id || exp.ExperienceId)} aria-label="Delete Experience">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
                       <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/>
                     </svg>

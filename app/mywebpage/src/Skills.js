@@ -11,15 +11,59 @@ export class Skills extends Component {
             modalTitle:"",
             SkillId:0,
             SkillName:"",
-            SkillLearned:""
+            SkillLearned:"",
+
+            SkillIdFilter:"",
+            SkillNameFilter:"",
+            SkillLearnedFilter:"",
+            SkillsWithoutFilter:[]
         } 
+    }
+    FilterFn(){
+        var SkillIdFilter=this.state.SkillIdFilter;
+        var SkillNameFilter=this.state.SkillNameFilter;
+        var SkillLearnedFilter=this.state.SkillLearnedFilter;
+
+        var filteredData=this.state.SkillsWithoutFilter.filter(
+            function(el){
+                var id = el.id || el.SkillId || '';
+                var name = el.name || el.SkillName || '';
+                var learned = el.whereSkillLearned || el.SkillLearned || '';
+
+                return String(id).toLowerCase().includes(String(SkillIdFilter).toLowerCase()) &&
+                    String(name).toLowerCase().includes(String(SkillNameFilter).toLowerCase()) &&
+                    String(learned).toLowerCase().includes(String(SkillLearnedFilter).toLowerCase());
+            }
+        );
+        this.setState({skills:filteredData});
+    }
+
+    sortResult(prop,asc){
+        var sortedData=this.state.SkillsWithoutFilter.sort(function(a,b){
+            var aProp = a[prop] || a[prop.charAt(0).toUpperCase() + prop.slice(1)] || '';
+            var bProp = b[prop] || b[prop.charAt(0).toUpperCase() + prop.slice(1)] || '';
+
+            if(asc){
+                return a[prop]>b[prop]?1:(a[prop]<b[prop]?-1:0);
+            }else{
+                return b[prop]>a[prop]?1:(b[prop]<a[prop]?-1:0);
+            }
+        });
+
+        this.setState({SkillsWithoutFilter:sortedData});
+
+        this.setState({skills:sortedData});
+    }
+
+    changeDepartmentIdFilter = (e)=>{
+        this.setState({SkillIdFilter:e.target.value},()=>this.FilterFn());
     }
 
     refreshList(){
         fetch(variables.API_URL+'skills')
         .then(response=>response.json())
         .then(data=>{
-            this.setState({skills:data});
+            this.setState({skills:data, SkillsWithoutFilter:data});
         });
     }
 
@@ -53,9 +97,9 @@ export class Skills extends Component {
    editClick(skill){
       this.setState({
           modalTitle:"Edit Skill",
-          SkillId:skill.SkillId,
-          SkillName:skill.SkillName,
-          SkillLearned:skill.SkillLearned
+          SkillId:skill.id || skill.SkillId,
+          SkillName:skill.name || skill.SkillName,
+          SkillLearned:skill.whereSkillLearned || skill.SkillLearned
         }, ()=>{
           const modalEl = document.getElementById('exampleModal');
           if(window.bootstrap){
@@ -69,7 +113,7 @@ export class Skills extends Component {
       fetch(variables.API_URL + 'skills', {
         method:'POST',
         headers:{'Accept':'application/json','Content-Type':'application/json'},
-        body:JSON.stringify({SkillName:this.state.SkillName, SkillLearned:this.state.SkillLearned})
+        body:JSON.stringify({name:this.state.SkillName, whereSkillLearned:this.state.SkillLearned})
       })
       .then(res=>res.json())
       .then((result)=>{
@@ -86,7 +130,7 @@ export class Skills extends Component {
       fetch(variables.API_URL + 'skills', {
         method:'PUT',
         headers:{'Accept':'application/json','Content-Type':'application/json'},
-        body:JSON.stringify({SkillId:this.state.SkillId, SkillName:this.state.SkillName, SkillLearned:this.state.SkillLearned})
+        body:JSON.stringify({id:this.state.SkillId, name:this.state.SkillName, whereSkillLearned:this.state.SkillLearned})
       })
       .then(res=>res.json())
       .then((result)=>{
@@ -101,7 +145,7 @@ export class Skills extends Component {
 
     deleteClick(id){
       if(window.confirm('Are you sure?')){
-        fetch(variables.API_URL + 'skills/' + id, {
+        fetch(variables.API_URL + 'skills?id=' + id, {
           method:'DELETE',
           headers:{'Accept':'application/json','Content-Type':'application/json'},
         })
@@ -132,21 +176,48 @@ export class Skills extends Component {
         <thead>
         <tr>
             <th>
+                <div className = "d-flex flex-row">
+                <input className = "form-control m-2"
+                onChange = {(e)=>{this.setState({SkillIdFilter:e.target.value},()=>this.FilterFn());}}
+                placeholder="Filter by Skill ID"/>
+                
+                <button type = "button" className = "btn btn-light"
+                onClick={()=>this.sortResult('SkillId',true)}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-down-square-fill" viewBox="0 0 16 16">
+                  <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.5 4.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5a.5.5 0 0 1 1 0"/>
+                  </svg>
+                </button>
+
+                <button type = "button" className = "btn btn-light"
+                onClick={()=>this.sortResult('SkillId',false)}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-up-square-fill" viewBox="0 0 16 16">
+                  <path d="M2 16a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2zm6.5-4.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 1 0"/>
+                  </svg>
+                </button>
+
+                </div>
+
               Skill Name
             </th>
             <th>
+              <input className = "form-control m-2"
+                onChange = {(e)=>{this.setState({SkillNameFilter:e.target.value},()=>this.FilterFn());}}
+                placeholder="Filter by Skill Name"/>
               Where the Skill was Learned
             </th>
             <th>
+              <input className = "form-control m-2"
+                onChange = {(e)=>{this.setState({SkillLearnedFilter:e.target.value},()=>this.FilterFn());}}
+                placeholder="Filter by Where the Skill was Learned"/>
               Options
             </th>
         </tr>
         </thead>
         <tbody>
         {skills.map(skill=>
-            <tr key={skill.SkillId}>
-                <td>{skill.SkillName}</td>
-                <td>{skill.SkillLearned}</td>
+            <tr key={skill.id || skill.SkillId}>
+                <td>{skill.name || skill.SkillName}</td>
+                <td>{skill.whereSkillLearned || skill.SkillLearned}</td>
                 <td>
                   <button type="button"
                     className="btn btn-light mr-1"
@@ -161,7 +232,7 @@ export class Skills extends Component {
 
                 <button type="button"
                 className = "btn btn-light mr-1"
-                onClick={()=>this.deleteClick(skill.SkillId)}>
+                onClick={()=>this.deleteClick(skill.id || skill.SkillId)}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
                       <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/>
                       </svg>

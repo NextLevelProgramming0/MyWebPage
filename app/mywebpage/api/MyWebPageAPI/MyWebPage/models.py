@@ -19,7 +19,8 @@ class Experience(models.Model):
 
 class Education(models.Model):
     degree = models.CharField(max_length=100)
-    degreeImage = models.ImageField(upload_to='Photos/')
+    # allow blank/null so older rows work when migrating
+    degreeImage = models.ImageField(upload_to='Photos/', blank=True, null=True)
     institution = models.CharField(max_length=100)
     yearOfCompletion = models.CharField(max_length=4)
 

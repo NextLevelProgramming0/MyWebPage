@@ -24,26 +24,37 @@ def skills_list(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = SkillsSerializer(data=request.data)
+        # Accept either frontend naming (SkillName/SkillLearned) or backend naming (name/whereSkillLearned)
+        data = {
+            'name': request.data.get('SkillName') or request.data.get('name'),
+            'whereSkillLearned': request.data.get('SkillLearned') or request.data.get('whereSkillLearned'),
+        }
+        serializer = SkillsSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({'message': 'Added Successfully'})
         return Response(serializer.errors, status=400)
 
     elif request.method == 'PUT':
-        skill_id = request.data.get('id')
+        # Accept 'id' or 'SkillId' from the frontend
+        skill_id = request.data.get('id') or request.data.get('SkillId')
         if not skill_id:
             return Response({'error': 'ID is required'}, status=400)
         skill = get_object_or_404(Skills, id=skill_id)
-        serializer = SkillsSerializer(skill, data=request.data)
+        data = {
+            'name': request.data.get('SkillName') or request.data.get('name'),
+            'whereSkillLearned': request.data.get('SkillLearned') or request.data.get('whereSkillLearned'),
+        }
+        serializer = SkillsSerializer(skill, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({'message': 'Updated Successfully'})
         return Response(serializer.errors, status=400)
 
     elif request.method == 'DELETE':
-        skill_id = request.GET.get('id')
-        if not skill_id:
+        # Allow id via query param (?id=), request body, or as last path segment (e.g., /skills/3)
+        skill_id = request.GET.get('id') or request.data.get('id') or request.path.rstrip('/').split('/')[-1]
+        if not skill_id or (isinstance(skill_id, str) and not skill_id.isdigit()):
             return Response({'error': 'ID is required'}, status=400)
         skill = get_object_or_404(Skills, id=skill_id)
         skill.delete()
@@ -144,9 +155,18 @@ def experience_list(request):
 @csrf_exempt
 def education_list(request):
     if request.method == 'GET':
-        educations = Education.objects.all()
-        serializer = EducationSerializer(educations, many=True)
-        return Response(serializer.data)
+        try:
+            # Select only existing columns to avoid ProgrammingError if migrations not applied
+            educations = list(Education.objects.values('id', 'degree', 'institution', 'yearOfCompletion'))
+            return Response(educations)
+        except Exception as e:
+            # Fallback: try full serializer and report error details if it still fails
+            try:
+                educations = Education.objects.all()
+                serializer = EducationSerializer(educations, many=True)
+                return Response(serializer.data)
+            except Exception as e2:
+                return Response({'error': 'Failed to fetch educations', 'details': str(e2)}, status=500)
 
     elif request.method == 'POST':
         serializer = EducationSerializer(data=request.data)

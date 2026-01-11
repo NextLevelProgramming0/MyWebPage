@@ -17,6 +17,7 @@ class ExperienceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class EducationSerializer(serializers.ModelSerializer):
+    degreeImage = serializers.ImageField(required=False, allow_null=True)
     class Meta:
         model = Education
         fields = '__all__'
