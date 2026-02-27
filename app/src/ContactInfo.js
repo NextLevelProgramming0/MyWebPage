@@ -113,7 +113,8 @@ export class ContactInfo extends Component {
       })
       .catch((error) => {
         console.error('Create contact failed', error);
-        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        let msg = error.message || String(error);
+        if (error.errors) msg = 'Validation error: ' + JSON.stringify(error.errors);
         alert('Create failed: ' + msg);
       });
   }
@@ -128,7 +129,8 @@ export class ContactInfo extends Component {
       })
       .catch((error) => {
         console.error('Update contact failed', error);
-        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        let msg = error.message || String(error);
+        if (error.errors) msg = 'Validation error: ' + JSON.stringify(error.errors);
         alert('Update failed: ' + msg);
       });
   }

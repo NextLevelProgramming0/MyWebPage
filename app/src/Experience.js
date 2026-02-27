@@ -129,7 +129,8 @@ export class Experience extends Component {
       })
       .catch((error) => {
         console.error('Create experience failed', error);
-        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        let msg = error.message || String(error);
+        if (error.errors) msg = 'Validation error: ' + JSON.stringify(error.errors);
         alert('Create failed: ' + msg);
       });
   }
@@ -151,7 +152,8 @@ export class Experience extends Component {
       })
       .catch((error) => {
         console.error('Update experience failed', error);
-        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        let msg = error.message || String(error);
+        if (error.errors) msg = 'Validation error: ' + JSON.stringify(error.errors);
         alert('Update failed: ' + msg);
       });
   }

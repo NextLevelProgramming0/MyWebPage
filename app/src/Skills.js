@@ -141,7 +141,8 @@ export class Skills extends Component {
       })
       .catch((error)=>{
         console.error('Create skill failed', error);
-        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        let msg = error.message || String(error);
+        if (error.errors) msg = 'Validation error: ' + JSON.stringify(error.errors);
         alert('Create failed: ' + msg);
       });
     }
@@ -163,7 +164,8 @@ export class Skills extends Component {
       })
       .catch((error)=>{
         console.error('Update skill failed', error);
-        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        let msg = error.message || String(error);
+        if (error.errors) msg = 'Validation error: ' + JSON.stringify(error.errors);
         alert('Update failed: ' + msg);
       });
     }
