@@ -10,7 +10,7 @@ import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/MyWebPage">
     <div className="App Container">
       <h3 className="d-flex justify-content-center m-3">
         Darius Quick's Web Page

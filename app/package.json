@@ -2,7 +2,7 @@
   "name": "mywebpage",
   "version": "0.1.2",
   "private": true,
-  "homepage": "https://NextLevelProgramming0.github.io/MyWebPage",
+  "homepage": "https://nextlevelprogramming0.github.io/MyWebPage/",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

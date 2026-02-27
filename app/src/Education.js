@@ -61,9 +61,16 @@ export class Education extends Component {
     this.refreshList();
   }
 
+  handleApiResponse = (res) => {
+      if (!res.ok) {
+          return res.json().catch(() => { throw new Error(`HTTP ${res.status}`); }).then(err => { throw err; });
+      }
+      return res.json();
+  };
+
   refreshList() {
     fetch(variables.API_URL + 'education')
-      .then(res => res.json())
+      .then(this.handleApiResponse)
       .then(data => this.setState({ educations: data, EducationsWithoutFilter: data }));
   }
 
@@ -121,20 +128,30 @@ export class Education extends Component {
       fd.append('degreeImage', this.state.DegreeImageFile);
 
       fetch(variables.API_URL + 'education', { method: 'POST', body: fd })
-        .then(res => res.json())
+        .then(this.handleApiResponse)
         .then((result) => {
           this.refreshList();
           const modalEl = document.getElementById('educationModal');
           if (window.bootstrap) { const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl); modal.hide(); }
-        }, (error) => { console.error(error); alert('Create failed'); });
+        })
+        .catch((error) => {
+          console.error('Create education failed', error);
+          const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+          alert('Create failed: ' + msg);
+        });
     } else {
       fetch(variables.API_URL + 'education', { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ degree: this.state.Degree, institution: this.state.Institution, yearOfCompletion: this.state.YearOfCompletion }) })
-        .then(res => res.json())
+        .then(this.handleApiResponse)
         .then((result) => {
           this.refreshList();
           const modalEl = document.getElementById('educationModal');
           if (window.bootstrap) { const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl); modal.hide(); }
-        }, (error) => { console.error(error); alert('Create failed'); });
+        })
+        .catch((error) => {
+          console.error('Create education failed', error);
+          const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+          alert('Create failed: ' + msg);
+        });
     }
   }
 
@@ -148,20 +165,30 @@ export class Education extends Component {
       fd.append('degreeImage', this.state.DegreeImageFile);
 
       fetch(variables.API_URL + 'education', { method: 'PUT', body: fd })
-        .then(res => res.json())
+        .then(this.handleApiResponse)
         .then((result) => {
           this.refreshList();
           const modalEl = document.getElementById('educationModal');
           if (window.bootstrap) { const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl); modal.hide(); }
-        }, (error) => { console.error(error); alert('Update failed'); });
+        })
+        .catch((error) => {
+          console.error('Update education failed', error);
+          const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+          alert('Update failed: ' + msg);
+        });
     } else {
       fetch(variables.API_URL + 'education', { method: 'PUT', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ id: this.state.EducationId, degree: this.state.Degree, institution: this.state.Institution, yearOfCompletion: this.state.YearOfCompletion }) })
-        .then(res => res.json())
+        .then(this.handleApiResponse)
         .then((result) => {
           this.refreshList();
           const modalEl = document.getElementById('educationModal');
           if (window.bootstrap) { const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl); modal.hide(); }
-        }, (error) => { console.error(error); alert('Update failed'); });
+        })
+        .catch((error) => {
+          console.error('Update education failed', error);
+          const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+          alert('Update failed: ' + msg);
+        });
     }
   }
 

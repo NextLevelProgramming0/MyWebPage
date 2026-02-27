@@ -66,9 +66,17 @@ export class Experience extends Component {
     this.refreshList();
   }
 
+  // common handler used by all fetch requests in this class
+  handleApiResponse = (res) => {
+      if (!res.ok) {
+          return res.json().catch(() => { throw new Error(`HTTP ${res.status}`); }).then(err => { throw err; });
+      }
+      return res.json();
+  };
+
   refreshList() {
     fetch(variables.API_URL + 'experience')
-      .then(res => res.json())
+      .then(this.handleApiResponse)
       .then(data => this.setState({ experiences: data, ExperiencesWithoutFilter: data }));
   }
 
@@ -110,7 +118,7 @@ export class Experience extends Component {
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ jobTitle: this.state.JobTitle, companyName: this.state.CompanyName, duration: this.state.Duration, description: this.state.Description })
     })
-      .then(res => res.json())
+      .then(this.handleApiResponse)
       .then((result) => {
         this.refreshList();
         const modalEl = document.getElementById('experienceModal');
@@ -118,7 +126,12 @@ export class Experience extends Component {
           const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
           modal.hide();
         }
-      }, (error) => { console.error(error); alert('Create failed'); });
+      })
+      .catch((error) => {
+        console.error('Create experience failed', error);
+        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        alert('Create failed: ' + msg);
+      });
   }
 
   updateClick() {
@@ -127,7 +140,7 @@ export class Experience extends Component {
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: this.state.ExperienceId, jobTitle: this.state.JobTitle, companyName: this.state.CompanyName, duration: this.state.Duration, description: this.state.Description })
     })
-      .then(res => res.json())
+      .then(this.handleApiResponse)
       .then((result) => {
         this.refreshList();
         const modalEl = document.getElementById('experienceModal');
@@ -135,7 +148,12 @@ export class Experience extends Component {
           const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
           modal.hide();
         }
-      }, (error) => { console.error(error); alert('Update failed'); });
+      })
+      .catch((error) => {
+        console.error('Update experience failed', error);
+        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        alert('Update failed: ' + msg);
+      });
   }
 
   deleteClick(id) {

@@ -7,6 +7,25 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Available Scripts
 
+> **Note:** the front‑end communicates with the Django backend via an `API_URL` base
+> address.  During development the value is hard‑coded to `http://127.0.0.1:8000/` but
+> that host is obviously unreachable when the app is deployed to GitHub Pages or
+> another public server.  To override it create a file called `.env` or
+> `.env.production` in this directory with a line such as:
+>
+> ```bash
+> REACT_APP_API_URL=https://your-backend.example.com/
+> ```
+>
+> and rebuild the project.  The runtime code falls back to the localhost URL when
+> the variable is not defined, so the local `npm start` workflow continues to work.
+>
+> Without a correct `API_URL` the `Create` and `Update` buttons will fail with a
+> "Create failed" popup (a network error is thrown when the page attempts to POST
+> to an unreachable address).
+
+## Available Scripts
+
 In the project directory, you can run:
 
 ### `npm start`

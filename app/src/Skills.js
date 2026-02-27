@@ -79,6 +79,21 @@ export class Skills extends Component {
         this.setState({SkillLearned:e.target.value});
     };
 
+    // utility used by every fetch call to centralise error handling.  it
+    // parses the JSON body and rejects the promise when the HTTP status
+    // indicates failure (non-2xx) so callers can treat both network errors and
+    // backend validation errors the same way.
+    handleApiResponse = (res) => {
+        if (!res.ok) {
+            // try to extract any JSON error object; if parsing fails we just
+            // throw the raw response so the caller still gets something useful.
+            return res.json()
+                .catch(() => { throw new Error(`HTTP ${res.status}`); })
+                .then(err => { throw err; });
+        }
+        return res.json();
+    };
+
     addClick(){
         this.setState({
             modalTitle:"Add Skill",
@@ -115,7 +130,7 @@ export class Skills extends Component {
         headers:{'Accept':'application/json','Content-Type':'application/json'},
         body:JSON.stringify({name:this.state.SkillName, whereSkillLearned:this.state.SkillLearned})
       })
-      .then(res=>res.json())
+      .then(this.handleApiResponse)
       .then((result)=>{
         this.refreshList();
         const modalEl = document.getElementById('exampleModal');
@@ -123,7 +138,12 @@ export class Skills extends Component {
           const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
           modal.hide();
         }
-      }, (error)=>{console.error(error); alert('Create failed');});
+      })
+      .catch((error)=>{
+        console.error('Create skill failed', error);
+        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        alert('Create failed: ' + msg);
+      });
     }
 
     updateClick(){
@@ -132,7 +152,7 @@ export class Skills extends Component {
         headers:{'Accept':'application/json','Content-Type':'application/json'},
         body:JSON.stringify({id:this.state.SkillId, name:this.state.SkillName, whereSkillLearned:this.state.SkillLearned})
       })
-      .then(res=>res.json())
+      .then(this.handleApiResponse)
       .then((result)=>{
         this.refreshList();
         const modalEl = document.getElementById('exampleModal');
@@ -140,7 +160,12 @@ export class Skills extends Component {
           const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
           modal.hide();
         }
-      }, (error)=>{console.error(error); alert('Update failed');});
+      })
+      .catch((error)=>{
+        console.error('Update skill failed', error);
+        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        alert('Update failed: ' + msg);
+      });
     }
 
     deleteClick(id){

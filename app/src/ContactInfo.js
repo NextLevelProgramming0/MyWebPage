@@ -61,9 +61,16 @@ export class ContactInfo extends Component {
     this.refreshList();
   }
 
+  handleApiResponse = (res) => {
+      if (!res.ok) {
+          return res.json().catch(() => { throw new Error(`HTTP ${res.status}`); }).then(err => { throw err; });
+      }
+      return res.json();
+  };
+
   refreshList() {
     fetch(variables.API_URL + 'contactinfo')
-      .then(res => res.json())
+      .then(this.handleApiResponse)
       .then(data => this.setState({ contacts: data, ContactsWithoutFilter: data }));
   }
 
@@ -98,22 +105,32 @@ export class ContactInfo extends Component {
 
   createClick() {
     fetch(variables.API_URL + 'contactinfo', { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ email: this.state.Email, phoneNumber: this.state.PhoneNumber, address: this.state.Address }) })
-      .then(res => res.json())
+      .then(this.handleApiResponse)
       .then((result) => {
         this.refreshList();
         const modalEl = document.getElementById('contactModal');
         if (window.bootstrap) { const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl); modal.hide(); }
-      }, (error) => { console.error(error); alert('Create failed'); });
+      })
+      .catch((error) => {
+        console.error('Create contact failed', error);
+        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        alert('Create failed: ' + msg);
+      });
   }
 
   updateClick() {
     fetch(variables.API_URL + 'contactinfo', { method: 'PUT', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ id: this.state.ContactId, email: this.state.Email, phoneNumber: this.state.PhoneNumber, address: this.state.Address }) })
-      .then(res => res.json())
+      .then(this.handleApiResponse)
       .then((result) => {
         this.refreshList();
         const modalEl = document.getElementById('contactModal');
         if (window.bootstrap) { const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl); modal.hide(); }
-      }, (error) => { console.error(error); alert('Update failed'); });
+      })
+      .catch((error) => {
+        console.error('Update contact failed', error);
+        const msg = error.errors ? JSON.stringify(error.errors) : error.message || error;
+        alert('Update failed: ' + msg);
+      });
   }
 
   deleteClick(id) {
