@@ -12,8 +12,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
+load_dotenv(BASE_DIR.parent / '.env')
 MEDIA_URL = '/Photos/'
 MEDIA_ROOT = os.path.join(BASE_DIR,'Photos')
 
@@ -26,15 +28,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hcv#o!)y7qh@=n3!%gt-=b(8%*!1h@9nef$2!gnj7b(bx1h^(z'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-hcv#o!)y7qh@=n3!%gt-=b(8%*!1h@9nef$2!gnj7b(bx1h^(z',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = [
-#     "127.0.0.1",
-#     "localhost",
-# ]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        'ALLOWED_HOSTS',
+        '*' if DEBUG else '127.0.0.1,localhost',
+    ).split(',')
+    if host.strip()
+]
 
 
 # Application definition
@@ -91,11 +100,11 @@ WSGI_APPLICATION = 'MyWebPageAPI.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "MyWebPage",
-        "USER": "neondb_owner",
-        "PASSWORD": "npg_D6cGMIYE5FQR",
-        "HOST": "ep-noisy-wind-a84k7uvq-pooler.eastus2.azure.neon.tech",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME", "MyWebPage"),
+        "USER": os.environ.get("DB_USER", "neondb_owner"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "npg_D6cGMIYE5FQR"),
+        "HOST": os.environ.get("DB_HOST", "ep-noisy-wind-a84k7uvq-pooler.eastus2.azure.neon.tech"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
         "OPTIONS": {
             "sslmode": "require",
         },
@@ -139,16 +148,32 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() == 'true'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'false').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'MyWebPage <no-reply@localhost>')
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
+}
+
+SIMPLE_JWT = {
+    "UPDATE_LAST_LOGIN": True,
 }

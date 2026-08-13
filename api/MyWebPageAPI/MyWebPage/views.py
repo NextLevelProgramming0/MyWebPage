@@ -11,6 +11,57 @@ from MyWebPage.serializers import (
 )
 
 from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.http import FileResponse, Http404
+from io import BytesIO
+from PIL import Image, ImageOps, UnidentifiedImageError
+
+def professional_picture_path(user):
+    return f'ProfessionalPicture/user_{user.pk}/professional_picture.jpg'
+
+
+@api_view(['GET', 'POST'])
+def professional_picture(request):
+    picture_path = professional_picture_path(request.user)
+    if request.method == 'GET':
+        if not default_storage.exists(picture_path):
+            default_picture_accounts = {
+                'quickdarius@yahoo.com',
+                'catchdarius@aol.com',
+            }
+            return Response({
+                'url': None,
+                'use_default': request.user.email.lower() in default_picture_accounts,
+            })
+        return Response({
+            'url': request.build_absolute_uri(default_storage.url(picture_path)),
+            'use_default': False,
+        })
+
+    uploaded_file = request.FILES.get('file')
+    if not uploaded_file:
+        return Response({'error': 'Select an image to upload.'}, status=400)
+
+    try:
+        with Image.open(uploaded_file) as source_image:
+            source_image = ImageOps.exif_transpose(source_image)
+            fitted_image = ImageOps.fit(
+                source_image.convert('RGB'),
+                (1080, 1440),
+                method=Image.Resampling.LANCZOS,
+            )
+            output = BytesIO()
+            fitted_image.save(output, format='JPEG', quality=88, optimize=True)
+    except (UnidentifiedImageError, OSError, ValueError):
+        return Response({'error': 'The selected file is not a supported image.'}, status=400)
+
+    if default_storage.exists(picture_path):
+        default_storage.delete(picture_path)
+    saved_path = default_storage.save(picture_path, ContentFile(output.getvalue()))
+    return Response({
+        'url': request.build_absolute_uri(default_storage.url(saved_path)),
+        'use_default': False,
+    })
 
 # ==========================
 # Skills Views
@@ -19,22 +70,22 @@ from django.core.files.storage import default_storage
 @csrf_exempt
 def skills_list(request):
     if request.method == 'GET':
-        skills = Skills.objects.all()
+        skills = Skills.objects.filter(owner=request.user)
         serializer = SkillsSerializer(skills, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
         serializer = SkillsSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(owner=request.user)
             return Response({'message': 'Added Successfully'})
         return Response(serializer.errors, status=400)
 
     elif request.method == 'PUT':
-        skill_id = request.data.get('id')
+        skill_id = request.data.get('SkillId')
         if not skill_id:
             return Response({'error': 'ID is required'}, status=400)
-        skill = get_object_or_404(Skills, id=skill_id)
+        skill = get_object_or_404(Skills, id=skill_id, owner=request.user)
         serializer = SkillsSerializer(skill, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -45,7 +96,7 @@ def skills_list(request):
         skill_id = request.GET.get('id')
         if not skill_id:
             return Response({'error': 'ID is required'}, status=400)
-        skill = get_object_or_404(Skills, id=skill_id)
+        skill = get_object_or_404(Skills, id=skill_id, owner=request.user)
         skill.delete()
         return Response({'message': 'Deleted Successfully'})
 
@@ -57,22 +108,22 @@ def skills_list(request):
 @csrf_exempt
 def projects_list(request):
     if request.method == 'GET':
-        projects = Projects.objects.all()
+        projects = Projects.objects.filter(owner=request.user)
         serializer = ProjectsSerializer(projects, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
         serializer = ProjectsSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(owner=request.user)
             return Response({'message': 'Added Successfully'})
         return Response(serializer.errors, status=400)
 
     elif request.method == 'PUT':
-        project_id = request.data.get('id')
+        project_id = request.data.get('ProjectId')
         if not project_id:
             return Response({'error': 'ID is required'}, status=400)
-        project = get_object_or_404(Projects, id=project_id)
+        project = get_object_or_404(Projects, id=project_id, owner=request.user)
         serializer = ProjectsSerializer(project, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -83,7 +134,7 @@ def projects_list(request):
         project_id = request.GET.get('id')
         if not project_id:
             return Response({'error': 'ID is required'}, status=400)
-        project = get_object_or_404(Projects, id=project_id)
+        project = get_object_or_404(Projects, id=project_id, owner=request.user)
         project.delete()
         return Response({'message': 'Deleted Successfully'})
 
@@ -95,33 +146,22 @@ def projects_list(request):
 @csrf_exempt
 def experience_list(request):
     if request.method == 'GET':
-        experiences = Experience.objects.all()
+        experiences = Experience.objects.filter(owner=request.user)
         serializer = ExperienceSerializer(experiences, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
         serializer = ExperienceSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(owner=request.user)
             return Response({'message': 'Added Successfully'})
         return Response(serializer.errors, status=400)
 
     elif request.method == 'PUT':
-        exp_id = request.data.get('id')
+        exp_id = request.data.get('ExperienceId')
         if not exp_id:
             return Response({'error': 'ID is required'}, status=400)
-        experience = get_object_or_404(Experience, id=exp_id)
-        serializer = ExperienceSerializer(experience, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Updated Successfully'})
-        return Response(serializer.errors, status=400)
-
-    elif request.method == 'PUT':
-        exp_id = request.data.get('id')
-        if not exp_id:
-            return Response({'error': 'ID is required'}, status=400)
-        experience = get_object_or_404(Experience, id=exp_id)
+        experience = get_object_or_404(Experience, id=exp_id, owner=request.user)
         serializer = ExperienceSerializer(experience, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -132,7 +172,7 @@ def experience_list(request):
         exp_id = request.GET.get('id')
         if not exp_id:
             return Response({'error': 'ID is required'}, status=400)
-        experience = get_object_or_404(Experience, id=exp_id)
+        experience = get_object_or_404(Experience, id=exp_id, owner=request.user)
         experience.delete()
         return Response({'message': 'Deleted Successfully'})
 
@@ -144,22 +184,22 @@ def experience_list(request):
 @csrf_exempt
 def education_list(request):
     if request.method == 'GET':
-        educations = Education.objects.all()
+        educations = Education.objects.filter(owner=request.user)
         serializer = EducationSerializer(educations, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
         serializer = EducationSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(owner=request.user)
             return Response({'message': 'Added Successfully'})
         return Response(serializer.errors, status=400)
 
     elif request.method == 'PUT':
-        edu_id = request.data.get('id')
+        edu_id = request.data.get('EducationId')
         if not edu_id:
             return Response({'error': 'ID is required'}, status=400)
-        education = get_object_or_404(Education, id=edu_id)
+        education = get_object_or_404(Education, id=edu_id, owner=request.user)
         serializer = EducationSerializer(education, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -170,9 +210,39 @@ def education_list(request):
         edu_id = request.GET.get('id')
         if not edu_id:
             return Response({'error': 'ID is required'}, status=400)
-        education = get_object_or_404(Education, id=edu_id)
+        education = get_object_or_404(Education, id=edu_id, owner=request.user)
         education.delete()
         return Response({'message': 'Deleted Successfully'})
+
+
+@api_view(['GET'])
+def download_education_file(request, education_id):
+    education = get_object_or_404(Education, id=education_id, owner=request.user)
+    if not education.degreeImage:
+        raise Http404('This education record has no attached file.')
+
+    try:
+        file_handle = education.degreeImage.open('rb')
+    except FileNotFoundError as exc:
+        raise Http404('The attached file could not be found.') from exc
+
+    return FileResponse(
+        file_handle,
+        as_attachment=True,
+        filename=education.degreeImage.name.rsplit('/', 1)[-1],
+    )
+
+
+@api_view(['DELETE'])
+def delete_education_file(request, education_id):
+    education = get_object_or_404(Education, id=education_id, owner=request.user)
+    if not education.degreeImage:
+        return Response({'error': 'This education record has no attached file.'}, status=404)
+
+    education.degreeImage.delete(save=False)
+    education.degreeImage = ''
+    education.save(update_fields=['degreeImage'])
+    return Response({'message': 'File deleted successfully'})
 
 
 # ==========================
@@ -182,22 +252,22 @@ def education_list(request):
 @csrf_exempt
 def contactinfo_list(request):
     if request.method == 'GET':
-        contactinfos = ContactInfo.objects.all()
+        contactinfos = ContactInfo.objects.filter(owner=request.user)
         serializer = ContactInfoSerializer(contactinfos, many=True)
         return Response(serializer.data)
 
     elif request.method == 'POST':
         serializer = ContactInfoSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(owner=request.user)
             return Response({'message': 'Added Successfully'})
         return Response(serializer.errors, status=400)
 
     elif request.method == 'PUT':
-        ci_id = request.data.get('id')
+        ci_id = request.data.get('ContactId')
         if not ci_id:
             return Response({'error': 'ID is required'}, status=400)
-        contactinfo = get_object_or_404(ContactInfo, id=ci_id)
+        contactinfo = get_object_or_404(ContactInfo, id=ci_id, owner=request.user)
         serializer = ContactInfoSerializer(contactinfo, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -208,12 +278,6 @@ def contactinfo_list(request):
         ci_id = request.GET.get('id')
         if not ci_id:
             return Response({'error': 'ID is required'}, status=400)
-        contactinfo = get_object_or_404(ContactInfo, id=ci_id)
+        contactinfo = get_object_or_404(ContactInfo, id=ci_id, owner=request.user)
         contactinfo.delete()
         return Response({'message': 'Deleted Successfully'})
-    
-@csrf_exempt
-def SaveFile(request):
-    file=request.FILES['file']
-    file_name=default_storage.save(file.name,file)
-    return Response(file_name, safe=False)
