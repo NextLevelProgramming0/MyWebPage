@@ -1,3 +1,5 @@
+See FinalizedDjangoReactMyPortfolio Branch for full project...
+
 # MyWebPage
 
 A full-stack personal portfolio website built to showcase my software development projects, technical skills, education, and professional experience.
