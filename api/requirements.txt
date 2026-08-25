@@ -1,0 +1,6 @@
+Django==6.1
+djangorestframework==3.18.0
+django-cors-headers
+psycopg
+Pillow
+python-dotenv==1.2.2

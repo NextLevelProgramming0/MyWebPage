@@ -17,25 +17,36 @@ Including another URLconf
 
 from MyWebPage import views
 
-from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path
 
 from django.conf.urls.static import static
 from django.conf import settings
+from django.http import HttpResponse, JsonResponse
+
+
+def api_root(request):
+    return JsonResponse({
+        'message': 'MyWebPage API is running',
+        'endpoints': ['skills/', 'projects/', 'experience/', 'education/', 'contactinfo/'],
+    })
+
+
+def favicon(request):
+    return HttpResponse(status=204)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    # Use case-insensitive regexes to accept requests both with and without trailing slash
-    re_path(r'(?i)^skills/?$', views.skills_list),
-    re_path(r'(?i)^projects/?$', views.projects_list),
-    re_path(r'(?i)^experience/?$', views.experience_list),
-    re_path(r'(?i)^education/?$', views.education_list),
-    re_path(r'(?i)^contactinfo/?$', views.contactinfo_list),
-    re_path(r'(?i)^education/SaveFile/?$', views.SaveFile),
+    path('', api_root, name='api-root'),
+    path('favicon.ico', favicon, name='favicon'),
+    path('home/professional-picture/', views.professional_picture),
+    path('skills/', views.skills_list),
+    path('projects/', views.projects_list),
+    path('experience/', views.experience_list),
+    path('education/', views.education_list),
+    path('education/<int:education_id>/download/', views.download_education_file),
+    path('education/<int:education_id>/file/', views.delete_education_file),
+    path('contactinfo/', views.contactinfo_list),
 ]
 
 # Serve media files in development only
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
